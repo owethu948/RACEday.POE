@@ -1,0 +1,34 @@
+@model EventDto
+@{
+    var enrolled = ViewData["Enrolled"] is true;
+    var isParticipant = ViewData["IsParticipant"] is true;
+}
+<div class="event-card">
+    <a class="ec-img" asp-controller="Events" asp-action="Details" asp-route-id="@Model.EventId" aria-label="View @Model.Name">
+        <partial name="_Banner" model="Model" />
+        <span class="ec-date"><strong>@Display.Day(Model.EventDate)</strong><small>@Display.MonthShort(Model.EventDate)</small></span>
+    </a>
+    <h3 class="ec-name"><a asp-controller="Events" asp-action="Details" asp-route-id="@Model.EventId">@Model.Name</a></h3>
+    <div class="ec-meta"><span>📍</span> @Model.Location · @Display.Date(Model.EventDate)</div>
+    <div class="ec-desc">@Model.Description</div>
+    <div class="ec-cats">
+        <span class="pill pill-pk">@Model.EventType</span>
+        <span class="pill pill-lv">@Display.Km(Model.DistanceKm)</span>
+        @if (Model.EnrolmentCount > 0)
+        {
+            <span class="pill pill-gr">@Model.EnrolmentCount entered</span>
+        }
+    </div>
+    @if (enrolled)
+    {
+        <a class="btn-enrolled" asp-controller="Participant" asp-action="MyEvents">✓ Enrolled · view my entry</a>
+    }
+    else if (isParticipant)
+    {
+        <button type="button" class="btn btn-rd w-100" data-enrol-event="@Model.EventId">Enter event</button>
+    }
+    else
+    {
+        <a class="btn btn-rd w-100" asp-controller="Events" asp-action="Details" asp-route-id="@Model.EventId">View event</a>
+    }
+</div>

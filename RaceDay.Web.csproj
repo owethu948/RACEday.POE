@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>RaceDay.Web</RootNamespace>
+    <!-- ASP0027: the "public partial class Program" line is harmless; the integration tests use it. -->
+    <NoWarn>$(NoWarn);ASP0027;NU1510</NoWarn>
+    <NuGetAudit>true</NuGetAudit>
+    <NuGetAuditMode>all</NuGetAuditMode>
+  </PropertyGroup>
+
+  <!--
+    ARCHITECTURE RULE: this project talks to the RaceDay API over HTTP only.
+    It must never reference Entity Framework, SqlClient or Azure.Storage.* - RaceDay.Web.Tests fails the build if one is ever added.
+  -->
+
+  <ItemGroup>
+    <!--
+      Added on request (Install-Package System.Net.Http.Json). It is already part of the .NET runtime, so it is harmless,
+      and it is the ONLY package this project may reference: ArchitectureTests rejects EF Core, SqlClient and Azure.*.
+    -->
+    <PackageReference Include="System.Net.Http.Json" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="RaceDay.Web.Tests" />
+  </ItemGroup>
+
+</Project>

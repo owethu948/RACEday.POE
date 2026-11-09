@@ -1,0 +1,81 @@
+@model ProfileViewModel
+@{
+    ViewData["Title"] = "My profile";
+}
+<section class="container py-4">
+    <div class="row g-4 justify-content-center">
+        <div class="col-12 col-lg-4">
+            <div class="card rd-panel text-center h-100">
+                <div class="card-body p-4">
+                    @if (!string.IsNullOrEmpty(Model.ProfilePictureUrl))
+                    {
+                        <img src="@Model.ProfilePictureUrl" alt="Profile picture of @Model.FullName" class="rd-profile-pic mb-3" />
+                    }
+                    else
+                    {
+                        <div class="rd-profile-pic rd-profile-initials mb-3">@CurrentUser.Initials</div>
+                    }
+                    <h1 class="rd-title h3 mb-1">@Model.FullName</h1>
+                    <p class="text-muted mb-2">@Model.Email</p>
+                    <span class="badge rd-role-pill">@Model.Role</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-8">
+            <div class="card rd-panel">
+                <div class="card-body p-4">
+                    <h2 class="rd-title h4 mb-4">Personal information</h2>
+
+                    <form asp-action="Profile" method="post" enctype="multipart/form-data" novalidate>
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label asp-for="FullName" class="form-label"></label>
+                                <input asp-for="FullName" class="form-control" />
+                                <span asp-validation-for="FullName" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="PhoneNumber" class="form-label"></label>
+                                <input asp-for="PhoneNumber" class="form-control" autocomplete="tel" />
+                                <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="DateOfBirth" class="form-label"></label>
+                                <input type="date" name="DateOfBirth" id="DateOfBirth" class="form-control" value="@(Model.DateOfBirth?.ToString("yyyy-MM-dd"))" max="@(DateTime.Today.ToString("yyyy-MM-dd"))" />
+                                <span asp-validation-for="DateOfBirth" class="text-danger small"></span>
+                            </div>
+                            <div class="col-12">
+                                <label asp-for="EmergencyContact" class="form-label"></label>
+                                <input asp-for="EmergencyContact" class="form-control" placeholder="Name and phone number" />
+                                <span asp-validation-for="EmergencyContact" class="text-danger small"></span>
+                            </div>
+                            <div class="col-12">
+                                <label asp-for="NewPicture" class="form-label"></label>
+                                <input type="file" asp-for="NewPicture" class="form-control" accept="image/png,image/jpeg,image/gif,image/webp" data-preview-target="#picture-preview" />
+                                <div class="form-text">JPG, PNG, GIF or WebP, up to 5 MB.</div>
+                                <span asp-validation-for="NewPicture" class="text-danger small"></span>
+                                <img id="picture-preview" class="rd-upload-preview mt-2" alt="" hidden />
+                                @if (!string.IsNullOrEmpty(Model.ProfilePictureUrl))
+                                {
+                                    <div class="form-check mt-2">
+                                        <input class="form-check-input" type="checkbox" name="RemovePicture" id="RemovePicture" value="true" />
+                                        <label class="form-check-label" for="RemovePicture">Remove my current picture</label>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-rd px-4">Save changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

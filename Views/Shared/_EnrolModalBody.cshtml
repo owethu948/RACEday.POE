@@ -1,0 +1,40 @@
+@model EnrolModalViewModel
+@{
+    var ev = Model.Event;
+}
+<div class="rd-modal-head">
+    <div class="rd-modal-title" id="enrol-title">@ev.Name</div>
+    <div class="rd-modal-sub">@Display.Date(ev.EventDate) · @ev.Location · choose your category</div>
+</div>
+<form asp-controller="Participant" asp-action="Enrol" method="post" id="enrol-form" class="m-0">
+    <input type="hidden" name="eventId" value="@ev.EventId" />
+    <div class="rd-modal-body">
+        @if (ev.Categories.Count == 0)
+        {
+            <p class="text-muted mb-0">The organiser hasn't added any categories yet. Check back soon.</p>
+        }
+        else
+        {
+            foreach (var c in ev.Categories)
+            {
+                var already = Model.EnrolledCategoryIds.Contains(c.CategoryId);
+                var full = c.EnrolledCount >= c.MaxParticipants;
+                var locked = already || full;
+                <label class="cat-opt@(locked ? " disabled" : "")">
+                    <input type="radio" name="categoryId" value="@c.CategoryId" disabled="@locked" />
+                    <div class="cat-opt-name">
+                        @c.Name
+                        @if (already) { <span class="status-pill s-fin ms-1">Enrolled</span> }
+                        else if (full) { <span class="status-pill s-dsq ms-1">Full</span> }
+                    </div>
+                    <div class="cat-opt-det">@Display.Km(c.DistanceKm) · @Display.Money(c.EntryFee) · @c.EnrolledCount / @c.MaxParticipants places taken</div>
+                </label>
+            }
+            <div class="text-danger mt-2" id="enrol-error" hidden>Please select a category first.</div>
+        }
+    </div>
+    <div class="rd-modal-foot">
+        <button type="button" class="btn btn-outline-rd" data-close-modal>Cancel</button>
+        <button type="submit" class="btn btn-rd" disabled="@(ev.Categories.Count == 0)">Confirm entry</button>
+    </div>
+</form>

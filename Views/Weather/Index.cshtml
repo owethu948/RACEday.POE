@@ -1,0 +1,89 @@
+@model WeatherPageViewModel
+@{
+    ViewData["Title"] = "Race Weather";
+    var w = Model.Weather;
+}
+
+<div class="section-label">Race day forecast</div>
+
+@if (Model.Events.Count == 0)
+{
+    <div class="empty">
+        <span class="empty-icon">⛅</span>
+        @if (Model.Problem is not null)
+        {
+            <div class="empty-h">Weather is temporarily unavailable</div>
+            <p class="mb-0">@Model.Problem</p>
+            <a class="btn btn-rd btn-sm mt-3" asp-action="Index">Try again</a>
+        }
+        else
+        {
+            <div class="empty-h">No upcoming events</div>
+            <p class="mb-0">Once events are open for entry, you can check their weather here.</p>
+        }
+    </div>
+}
+else
+{
+    <form method="get" asp-action="Index" class="mb-4">
+        <label class="form-label" for="eventId">Select your event</label>
+        <select class="form-select" style="max-width: 360px" id="eventId" name="eventId" onchange="this.form.submit()">
+            @foreach (var e in Model.Events)
+            {
+                <option value="@e.EventId" selected="@(e.EventId == Model.SelectedEventId)">@e.Name – @Display.Date(e.EventDate)</option>
+            }
+        </select>
+        <noscript><button type="submit" class="btn btn-rd btn-sm mt-2">Show weather</button></noscript>
+    </form>
+
+    @if (w is null)
+    {
+        <div class="weather-card">
+            <div class="weather-icon">🌫️</div>
+            <div>
+                <div class="fw-bold mb-1">Weather isn't available right now</div>
+                <div class="weather-det">@(Model.Problem ?? "Please try again in a moment.")</div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="weather-card">
+            <div class="weather-icon">@w.Icon</div>
+            <div class="flex-grow-1">
+                <div class="fw-bold text-muted mb-1">@w.Location</div>
+                <div class="weather-temp">
+                    @Display.Temp(w.TemperatureC)
+                    @if (w.IsEventDayForecast && w.LowC is { } low && w.HighC is { } high)
+                    {
+                        <span class="fs-6 text-muted"> (@Display.Temp(low) to @Display.Temp(high))</span>
+                    }
+                </div>
+                <div class="weather-det">
+                    @w.Summary · Wind @Math.Round(w.WindKmh)km/h
+                    @if (w.HumidityPercent is { } humidity) { <text> · Humidity @humidity%</text> }
+                    @if (w.RainChancePercent is { } rain) { <text> · Rain chance @rain%</text> }
+                    @if (w.UvIndex is { } uv) { <text> · UV @uv.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)</text> }
+                </div>
+            </div>
+            <span class="status-pill @Display.ConditionClass(w.Conditions)">@w.Conditions conditions</span>
+        </div>
+
+        <p class="small text-muted mt-2 mb-0">
+            @(w.IsEventDayForecast
+                ? "Forecast for " + Display.Date(w.EventDate) + "."
+                : "This event is more than 16 days away, so you're seeing today's conditions at the venue. Check back closer to race day for the real forecast.")
+            Weather data by Open-Meteo.
+        </p>
+
+        <div class="weather-tips">
+            <div class="fw-bold">💡 Race day tips for these conditions</div>
+            <ul>
+                @foreach (var tip in w.Tips)
+                {
+                    <li>@tip</li>
+                }
+            </ul>
+        </div>
+    }
+}

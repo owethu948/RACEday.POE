@@ -1,49 +1,168 @@
-﻿<!DOCTYPE html>
+@{
+    var controller = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
+    var action = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
+    var pageTitle = ViewData["Title"] as string;
+    string On(bool active) => active ? " active" : string.Empty;
+}
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - RACEday.POE</title>
-    <script type="importmap"></script>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/RACEday.POE.styles.css" asp-append-version="true" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@(pageTitle is null ? "" : pageTitle + " · ")RaceDay</title>
+    <link rel="icon" type="image/svg+xml" href="~/img/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+    <link href="~/css/site.css" rel="stylesheet" asp-append-version="true" />
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">RACEday.POE</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                </div>
+    <div class="rd-shell">
+        <aside class="rd-sidebar" id="sidebar" aria-label="Main navigation">
+            <a class="rd-logo" asp-controller="Home" asp-action="Index">
+                <span class="rd-logo-mark">🎀</span>
+                <span>
+                    <span class="rd-logo-txt d-block">RaceDay</span>
+                    <span class="rd-logo-sub d-block">Race. Celebrate. Repeat.</span>
+                </span>
+            </a>
+
+            <nav class="rd-nav">
+                @if (CurrentUser.IsOrganiser)
+                {
+                    <div class="rd-nav-section">Organiser</div>
+                    <a class="rd-nav-item@(On(controller == "Organiser"))" asp-controller="Organiser" asp-action="Dashboard">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></svg>
+                        Dashboard
+                    </a>
+                    <a class="rd-nav-item@(On(controller is "OrganiserEvents" or "OrganiserCategories" or "OrganiserEnrolments" && action != "Create"))" asp-controller="OrganiserEvents" asp-action="Index">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
+                        Manage Events
+                    </a>
+                    <a class="rd-nav-item@(On(controller == "OrganiserEvents" && action == "Create"))" asp-controller="OrganiserEvents" asp-action="Create">
+                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="16" /><line x1="8" y1="12" x2="16" y2="12" /></svg>
+                        Create Event
+                    </a>
+                    <a class="rd-nav-item@(On(controller == "OrganiserResults"))" asp-controller="OrganiserResults" asp-action="Landing">
+                        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="12" y1="18" x2="12" y2="12" /><line x1="9" y1="15" x2="15" y2="15" /></svg>
+                        Capture Results
+                    </a>
+                    <a class="rd-nav-item@(On(controller == "Weather"))" asp-controller="Weather" asp-action="Index">
+                        <svg viewBox="0 0 24 24"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9z" /></svg>
+                        Race Weather
+                    </a>
+                }
+                else
+                {
+                    <div class="rd-nav-section">@(CurrentUser.IsParticipant ? "Participant" : "Explore")</div>
+                    <a class="rd-nav-item@(On(controller is "Home" or "Events"))" asp-controller="Home" asp-action="Index">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
+                        Browse Events
+                    </a>
+                    @if (CurrentUser.IsParticipant)
+                    {
+                        <a class="rd-nav-item@(On(controller == "Participant" && action is "MyEvents"))" asp-controller="Participant" asp-action="MyEvents">
+                            <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" /></svg>
+                            My Enrolments
+                        </a>
+                        <a class="rd-nav-item@(On(controller == "Participant" && action is "MyResults"))" asp-controller="Participant" asp-action="MyResults">
+                            <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                            My Results
+                        </a>
+                    }
+                    <a class="rd-nav-item@(On(controller == "Weather"))" asp-controller="Weather" asp-action="Index">
+                        <svg viewBox="0 0 24 24"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9z" /></svg>
+                        Race Weather
+                    </a>
+                }
+            </nav>
+
+            <div class="rd-sidebar-footer">
+                @if (CurrentUser.IsAuthenticated)
+                {
+                    <a class="rd-user-chip" asp-controller="Account" asp-action="Profile" title="My profile">
+                        <span class="avatar">@CurrentUser.Initials</span>
+                        <span>
+                            <span class="rd-user-name d-block">@CurrentUser.DisplayName</span>
+                            <span class="rd-user-role d-block">@CurrentUser.Role</span>
+                        </span>
+                    </a>
+                    <form asp-controller="Account" asp-action="Logout" method="post" class="m-0">
+                        <button type="submit" class="btn btn-outline-secondary btn-sm w-100">Log out</button>
+                    </form>
+                }
+                else
+                {
+                    <a class="btn btn-rd w-100 mb-2" asp-controller="Account" asp-action="Register">Join RaceDay</a>
+                    <a class="btn btn-outline-rd w-100" asp-controller="Account" asp-action="Login">Log in</a>
+                }
             </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
+        </aside>
+        <div class="rd-sidebar-backdrop" id="sidebar-backdrop"></div>
+
+        <div class="rd-main">
+            <header class="rd-topbar">
+                <div class="rd-topbar-left">
+                    <button type="button" class="rd-burger" id="sidebar-toggle" aria-label="Open menu" aria-controls="sidebar">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></svg>
+                    </button>
+                    <h1 class="page-title">@(pageTitle ?? "RaceDay")</h1>
+                </div>
+                <div class="rd-topbar-right">
+                    @if (!CurrentUser.IsOrganiser)
+                    {
+                        <form class="rd-search" method="get" asp-controller="Home" asp-action="Index" role="search">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#B89ABC" stroke-width="2"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+                            <input type="text" name="Search" placeholder="Search events…" aria-label="Search events" />
+                        </form>
+                    }
+                    @if (CurrentUser.IsAuthenticated)
+                    {
+                        <button type="button" class="rd-bell" id="notif-btn" aria-label="Notifications" aria-expanded="false" data-url="@Url.Action("Index", "Notifications")">
+                            <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 01-3.46 0" /></svg>
+                            <span class="rd-bell-dot"></span>
+                        </button>
+                        <a class="avatar" asp-controller="Account" asp-action="Profile" title="My profile">@CurrentUser.Initials</a>
+                        <div class="rd-notif-panel" id="notif-panel" role="dialog" aria-label="Notifications">
+                            <div class="notif-head">Notifications</div>
+                            <div id="notif-body"><div class="notif-item"><span class="notif-txt text-muted">Loading…</span></div></div>
+                        </div>
+                    }
+                </div>
+            </header>
+
+            <main class="rd-content">
+                <partial name="_Alerts" />
+                @RenderBody()
+            </main>
+        </div>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - RACEday.POE - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+    <!-- generic confirm pop-up (forms with data-confirm) -->
+    <div class="modal-overlay" id="confirm-modal" aria-hidden="true">
+        <div class="rd-modal" role="alertdialog" aria-labelledby="confirm-title">
+            <div class="rd-modal-head dark">
+                <div class="rd-modal-title" id="confirm-title">Are you sure?</div>
+                <div class="rd-modal-sub" id="confirm-sub"></div>
+            </div>
+            <div class="rd-modal-body"><p class="mb-0 text-muted" id="confirm-message"></p></div>
+            <div class="rd-modal-foot">
+                <button type="button" class="btn btn-outline-rd" id="confirm-no">Keep it</button>
+                <button type="button" class="btn btn-outline-danger" id="confirm-yes">Yes, do it</button>
+            </div>
         </div>
-    </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    </div>
+
+    <!-- enrol pop-up (content loaded on demand from /Events/EnrolModal/{id}) -->
+    <div class="modal-overlay" id="enrol-modal" aria-hidden="true">
+        <div class="rd-modal" role="dialog" aria-labelledby="enrol-title" id="enrol-modal-content"></div>
+    </div>
+
+    <div class="rd-toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>

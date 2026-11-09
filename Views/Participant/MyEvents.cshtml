@@ -1,0 +1,48 @@
+@model MyEnrolmentsViewModel
+@{
+    ViewData["Title"] = "My Enrolments";
+    var now = DateTime.Now;
+}
+
+<div class="tabs" role="tablist">
+    <a class="tab@(Model.Tab == "all" ? " active" : "")" asp-action="MyEvents" asp-route-tab="all">All (@Model.AllCount)</a>
+    <a class="tab@(Model.Tab == "upcoming" ? " active" : "")" asp-action="MyEvents" asp-route-tab="upcoming">Upcoming (@Model.UpcomingCount)</a>
+    <a class="tab@(Model.Tab == "past" ? " active" : "")" asp-action="MyEvents" asp-route-tab="past">Past (@Model.PastCount)</a>
+</div>
+
+@if (Model.Items.Count == 0)
+{
+    <div class="empty">
+        <span class="empty-icon">🎟️</span>
+        <div class="empty-h">@Html.Raw(Model.AllCount == 0 ? "You haven't enrolled for anything yet" : "Nothing in this tab")</div>
+        <p>@(Model.AllCount == 0 ? "Pick an event and choose your distance. It only takes a few seconds." : "Try another tab.")</p>
+        <a asp-controller="Home" asp-action="Index" class="btn btn-rd">Browse events</a>
+    </div>
+}
+else
+{
+    foreach (var e in Model.Items)
+    {
+        var upcoming = e.EventDate >= now;
+        <div class="list-row">
+            <div class="row-icon">@(e.Status == "Cancelled" ? "✖️" : upcoming ? "🎀" : "🏅")</div>
+            <div class="row-body">
+                <div class="row-name"><a asp-controller="Events" asp-action="Details" asp-route-id="@e.EventId">@e.EventName</a></div>
+                <div class="row-det">@e.CategoryName · @Display.Km(e.DistanceKm) · @Display.Date(e.EventDate) · @Display.Money(e.EntryFee) · entered @Display.Date(e.EnrolmentDate)</div>
+            </div>
+            <div class="row-actions">
+                <partial name="_StatusBadge" model="e.Status" />
+                <span class="status-pill @(upcoming ? "s-upcoming" : "s-past")">@(upcoming ? "Upcoming" : "Past")</span>
+                @if (e.Status == "Confirmed" && upcoming)
+                {
+                    <form asp-action="CancelEnrolment" method="post" class="m-0"
+                          data-confirm="Your spot will be released and your entry fee may not be refundable. Cancel your enrolment for @(e.EventName)?"
+                          data-confirm-title="Cancel enrolment?" data-confirm-yes="Yes, cancel it" data-confirm-no="Keep enrolment">
+                        <input type="hidden" name="enrolmentId" value="@e.EnrolmentId" />
+                        <button type="submit" class="btn btn-outline-danger btn-sm">Cancel</button>
+                    </form>
+                }
+            </div>
+        </div>
+    }
+}

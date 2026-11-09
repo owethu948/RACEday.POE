@@ -1,0 +1,60 @@
+@model MyResultsViewModel
+@{
+    ViewData["Title"] = "My Results";
+}
+
+@if (Model.Rows.Count == 0)
+{
+    <div class="empty">
+        <span class="empty-icon">🏆</span>
+        <div class="empty-h">No results yet</div>
+        <p class="mb-0">Results appear here after an organiser publishes them for an event you entered.</p>
+    </div>
+}
+else
+{
+    <div class="rd-hero">
+        <div>
+            <div class="hero-tag">Performance history</div>
+            <div class="hero-h">You've raced @Display.Plural(Model.Rows.Count, "time")</div>
+            <div class="hero-sub mt-1">@Model.Finished finished · @Model.DidNotFinish DNF / DSQ. Keep going! 💪</div>
+        </div>
+        @if (Model.PersonalBest is { } pb)
+        {
+            <div class="hero-stat">
+                <div class="hero-stat-v">@Display.FinishTime(pb.FinishTime)</div>
+                <div class="hero-stat-l">Personal best · @pb.CategoryName</div>
+            </div>
+        }
+    </div>
+
+    foreach (var row in Model.Rows)
+    {
+        var r = row.Result;
+        var finished = r.Status == "Finished" && r.Position is not null;
+        <div class="list-row">
+            @if (finished)
+            {
+                <div class="result-pos @Display.PositionClass(r.Position)">@r.Position</div>
+            }
+            else
+            {
+                <div class="result-pos pos-other">–</div>
+            }
+            <div class="row-body">
+                <div class="row-name"><a asp-controller="Events" asp-action="Details" asp-route-id="@r.EventId">@r.EventName</a></div>
+                <div class="row-det">@r.CategoryName · @Display.Date(r.EventDate)</div>
+            </div>
+            <div class="row-actions text-end">
+                <div>
+                    <div class="rd-time">@Display.FinishTime(r.FinishTime)</div>
+                    @if (finished)
+                    {
+                        <div class="row-det mt-0">@Display.PositionOutOf(r.Position!.Value, row.TotalFinishers)</div>
+                    }
+                </div>
+                <partial name="_StatusBadge" model="r.Status" />
+            </div>
+        </div>
+    }
+}

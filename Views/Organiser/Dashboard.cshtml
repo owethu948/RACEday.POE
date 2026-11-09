@@ -1,0 +1,72 @@
+@model OrganiserDashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+    var now = DateTime.Now;
+}
+
+<div class="rd-hero">
+    <div>
+        <div class="hero-tag">Organiser dashboard</div>
+        <div class="hero-h">Hello, @CurrentUser.DisplayName 🎀</div>
+        <div class="hero-sub mt-1">
+            @if (Model.NextEvent is { } next)
+            {
+                <text>Next up: <strong>@next.Name</strong> @Display.DaysUntil(next.EventDate) with @Display.Plural(next.EnrolmentCount, "entry", "entries").</text>
+            }
+            else
+            {
+                <text>No upcoming events yet. Create one and open it for entries.</text>
+            }
+        </div>
+    </div>
+    <a class="hero-btn" asp-controller="OrganiserEvents" asp-action="Create">+ Create event</a>
+</div>
+
+<div class="grid-4">
+    <div class="stat-card"><div class="stat-val">@Model.TotalEvents</div><div class="stat-lbl">Events managed</div></div>
+    <div class="stat-card"><div class="stat-val">@Model.TotalEnrolments</div><div class="stat-lbl">Total enrolments</div></div>
+    <div class="stat-card"><div class="stat-val">@Model.ResultsCaptured</div><div class="stat-lbl">Results captured</div></div>
+    <div class="stat-card"><div class="stat-val">@Display.Money(Model.TotalEntryFees)</div><div class="stat-lbl">Total entry fees</div></div>
+</div>
+
+<div class="section-label">Your events</div>
+
+@if (Model.Events.Count == 0)
+{
+    <div class="empty">
+        <span class="empty-icon">🏁</span>
+        <div class="empty-h">Create your first event</div>
+        <p>Add the details, upload a banner and set up categories. Participants can enrol straight away.</p>
+        <a asp-controller="OrganiserEvents" asp-action="Create" class="btn btn-rd">Create an event</a>
+    </div>
+}
+else
+{
+    foreach (var e in Model.Events)
+    {
+        var upcoming = e.EventDate >= now;
+        var width = Model.MaxEnrolments == 0 ? 0 : (int)Math.Round(e.EnrolmentCount * 100.0 / Model.MaxEnrolments);
+        <div class="list-row flex-wrap">
+            <div class="rd-thumb"><partial name="_Banner" model="e" /></div>
+            <div class="row-body">
+                <div class="row-name"><a asp-controller="Events" asp-action="Details" asp-route-id="@e.EventId">@e.Name</a></div>
+                <div class="row-det">@Display.Date(e.EventDate) · @e.Location · @e.EventType · @Display.Km(e.DistanceKm)</div>
+            </div>
+            <div class="row-actions">
+                <span class="status-pill @(upcoming ? "s-upcoming" : "s-past")">@(upcoming ? "Upcoming" : "Past")</span>
+                <a class="btn btn-outline-rd btn-sm" asp-controller="OrganiserCategories" asp-action="Index" asp-route-eventId="@e.EventId">Categories</a>
+                <a class="btn btn-outline-rd btn-sm" asp-controller="OrganiserEnrolments" asp-action="Index" asp-route-eventId="@e.EventId">Enrolments</a>
+                <a class="btn btn-outline-rd btn-sm" asp-controller="OrganiserResults" asp-action="Index" asp-route-eventId="@e.EventId">Results</a>
+                <a class="btn btn-outline-secondary btn-sm" asp-controller="OrganiserEvents" asp-action="Edit" asp-route-id="@e.EventId">Edit</a>
+            </div>
+            <div class="w-100">
+                <div class="org-stat-row">
+                    <div class="org-stat"><div class="org-stat-v">@e.EnrolmentCount</div><div class="org-stat-l">Enrolments</div></div>
+                    <div class="org-stat"><div class="org-stat-v">@e.ResultCount</div><div class="org-stat-l">Results captured</div></div>
+                    <div class="org-stat"><div class="org-stat-v">@Display.Money(e.TotalEntryFees)</div><div class="org-stat-l">Entry fees</div></div>
+                </div>
+                <div class="rd-bar mt-3" title="Enrolments compared with your busiest event"><div class="rd-bar-fill" style="width: @(width)%"></div></div>
+            </div>
+        </div>
+    }
+}

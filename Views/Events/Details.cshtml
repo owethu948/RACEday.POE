@@ -1,0 +1,128 @@
+@model EventDetailsViewModel
+@{
+    var ev = Model.Event;
+    var returnUrl = "/Events/Details/" + ev.EventId;
+    ViewData["Title"] = ev.Name;
+}
+
+<div class="rd-event-head">
+    <span class="rd-type-pill">@Display.EventEmoji(ev.EventType) @ev.EventType</span>
+    <div class="hero-h">@ev.Name</div>
+    <div class="rd-event-meta">
+        <span>📅 @Display.DateTimeLong(ev.EventDate)</span>
+        <span>📍 @ev.Location</span>
+        <span>🏁 @Display.Km(ev.DistanceKm)</span>
+        <span>👥 @Display.Plural(ev.EnrolmentCount, "entry", "entries")</span>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-12 col-lg-5">
+        <div class="rd-cover"><partial name="_Banner" model="ev" /></div>
+
+        <div class="rd-panel p-4 mb-4">
+            <h2 class="h5 mb-2">About this event</h2>
+            <p class="mb-3">@(string.IsNullOrWhiteSpace(ev.Description) ? "The organiser hasn't added a description yet." : ev.Description)</p>
+            <a class="btn btn-outline-rd btn-sm" asp-controller="Weather" asp-action="Index" asp-route-eventId="@ev.EventId">⛅ Race-day weather</a>
+        </div>
+
+        @if (Model.HasTakenPlace)
+        {
+            <div class="rd-panel p-4">
+                <h2 class="h5 mb-3">🏆 Results</h2>
+                @if (Model.Leaderboard.Count == 0)
+                {
+                    <p class="text-muted mb-0">Results haven't been published yet.</p>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table lb-table align-middle mb-0">
+                            <thead><tr><th>Pos</th><th>Name</th><th>Category</th><th class="text-end">Time</th></tr></thead>
+                            <tbody>
+                                @foreach (var r in Model.Leaderboard)
+                                {
+                                    <tr>
+                                        <td><span class="result-pos @Display.PositionClass(r.Position)" style="width:32px;height:32px;min-width:32px;font-size:12px">@r.Position</span></td>
+                                        <td>@r.ParticipantName</td>
+                                        <td class="text-muted small">@r.CategoryName</td>
+                                        <td class="text-end rd-time">@Display.FinishTime(r.FinishTime)</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="small text-muted mt-2 mb-0">Top @Model.Leaderboard.Count of @Display.Plural(Model.TotalFinishers, "finisher").</p>
+                }
+            </div>
+        }
+    </div>
+
+    <div class="col-12 col-lg-7">
+        <div class="rd-panel p-4">
+            <h2 class="h5 mb-1">Categories</h2>
+            <p class="text-muted">@(CurrentUser.IsParticipant && !Model.HasTakenPlace ? "Choose your category and enter." : "Distances and age groups at this event.")</p>
+
+            @if (ev.Categories.Count == 0)
+            {
+                <div class="rd-empty rd-empty-sm"><span class="empty-icon">🏷️</span><p class="mb-0">The organiser hasn't added categories yet.</p></div>
+            }
+            else
+            {
+                <div class="vstack gap-3">
+                    @foreach (var c in ev.Categories)
+                    {
+                        var enrolled = Model.EnrolledCategoryIds.Contains(c.CategoryId);
+                        var full = c.EnrolledCount >= c.MaxParticipants;
+                        <div class="rd-category">
+                            <div class="flex-grow-1">
+                                <div class="rd-category-name">@c.Name</div>
+                                <div class="text-muted small">
+                                    @Display.Km(c.DistanceKm) &middot; @Display.Money(c.EntryFee) &middot;
+                                    @c.EnrolledCount / @c.MaxParticipants places taken
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                @if (enrolled)
+                                {
+                                    <partial name="_StatusBadge" model="@("Confirmed")" />
+                                }
+                                else if (Model.HasTakenPlace)
+                                {
+                                    <span class="status-pill s-past">Closed</span>
+                                }
+                                else if (full)
+                                {
+                                    <span class="status-pill s-dsq">Full</span>
+                                }
+                                else if (CurrentUser.IsParticipant)
+                                {
+                                    <form asp-controller="Participant" asp-action="Enrol" method="post" class="m-0">
+                                        <input type="hidden" name="eventId" value="@ev.EventId" />
+                                        <input type="hidden" name="categoryId" value="@c.CategoryId" />
+                                        <button type="submit" class="btn btn-rd btn-sm px-3">Enrol</button>
+                                    </form>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+
+            @if (!CurrentUser.IsAuthenticated && !Model.HasTakenPlace)
+            {
+                <div class="alert alert-info mt-4 mb-0">
+                    <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="@returnUrl">Log in</a> or
+                    <a asp-controller="Account" asp-action="Register">create an account</a> to enrol.
+                </div>
+            }
+            @if (CurrentUser.IsOrganiser && ev.OrganiserId == CurrentUser.UserId)
+            {
+                <div class="d-flex flex-wrap gap-2 mt-4">
+                    <a class="btn btn-outline-rd btn-sm" asp-controller="OrganiserEvents" asp-action="Edit" asp-route-id="@ev.EventId">Edit event</a>
+                    <a class="btn btn-outline-rd btn-sm" asp-controller="OrganiserEnrolments" asp-action="Index" asp-route-eventId="@ev.EventId">Enrolments</a>
+                </div>
+            }
+        </div>
+    </div>
+</div>

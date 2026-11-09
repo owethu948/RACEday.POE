@@ -1,0 +1,18 @@
+@model List<NotificationItem>
+@foreach (var n in Model)
+{
+    if (!string.IsNullOrEmpty(n.Url))
+    {
+        <a class="notif-item@(n.Unread ? "" : " read")" href="@n.Url">
+            <span class="notif-icon">@n.Icon</span>
+            <span><span class="notif-txt d-block">@n.Text</span><span class="notif-time d-block">@n.When</span></span>
+        </a>
+    }
+    else
+    {
+        <div class="notif-item@(n.Unread ? "" : " read")">
+            <span class="notif-icon">@n.Icon</span>
+            <span><span class="notif-txt d-block">@n.Text</span><span class="notif-time d-block">@n.When</span></span>
+        </div>
+    }
+}

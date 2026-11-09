@@ -1,0 +1,91 @@
+@model EventResultsViewModel
+@{
+    var ev = Model.Event;
+    ViewData["Title"] = "Results · " + ev.Name;
+}
+<section class="container py-4">
+    @if (Model.OrganiserEvents.Count > 1)
+    {
+        <div class="tabs" role="tablist" aria-label="Choose an event">
+            @foreach (var o in Model.OrganiserEvents)
+            {
+                <a class="tab@(o.EventId == ev.EventId ? " active" : "")" asp-action="Index" asp-route-eventId="@o.EventId">@o.Name</a>
+            }
+        </div>
+    }
+    <a asp-controller="OrganiserEvents" asp-action="Index" class="rd-back">&larr; Manage events</a>
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mt-2 mb-4">
+        <div>
+            <h1 class="rd-title mb-1">Results entry</h1>
+            <p class="text-muted mb-0">@ev.Name &middot; @Display.Date(ev.EventDate) &middot; @ev.Location</p>
+        </div>
+        <a class="btn btn-outline-rd btn-sm" asp-controller="OrganiserEnrolments" asp-action="Index" asp-route-eventId="@ev.EventId"><i class="bi bi-people-fill"></i> Enrolments</a>
+    </div>
+
+    @if (!Model.HasTakenPlace)
+    {
+        <div class="alert alert-warning">
+            <i class="bi bi-hourglass-split me-1"></i>
+            This event takes place on <strong>@Display.DateTimeLong(ev.EventDate)</strong>. Results can be captured once it has concluded.
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle-fill me-1"></i>
+            Saving a row <strong>publishes</strong> that result to the participant straight away. Enter times as <code>h:mm:ss</code> (for example <code>1:45:32</code>).
+        </div>
+    }
+
+    @if (Model.Rows.Count == 0)
+    {
+        <div class="rd-empty">
+            <i class="bi bi-stopwatch"></i>
+            <h2 class="h5">Nobody to capture results for</h2>
+            <p class="text-muted mb-0">Only confirmed enrolments appear here.</p>
+        </div>
+    }
+    else
+    {
+        var disabled = !Model.HasTakenPlace;
+        <div class="card rd-panel">
+            <div class="table-responsive">
+                <table class="table rd-table align-middle mb-0">
+                    <thead><tr><th>Participant</th><th>Category</th><th style="width:150px">Status</th><th style="width:140px">Finish time</th><th style="width:110px">Position</th><th class="text-end" style="width:130px"></th></tr></thead>
+                    <tbody>
+                        @foreach (var row in Model.Rows)
+                        {
+                            var formId = "result-form-" + row.EnrolmentId;
+                            <tr>
+                                <td><strong>@row.ParticipantName</strong></td>
+                                <td>@row.CategoryName</td>
+                                <td>
+                                    <select name="Status" form="@formId" class="form-select form-select-sm js-result-status" disabled="@disabled">
+                                        <option value="Finished" selected="@(row.Status == "Finished")">Finished</option>
+                                        <option value="DNF" selected="@(row.Status == "DNF")">DNF</option>
+                                        <option value="DSQ" selected="@(row.Status == "DSQ")">DSQ</option>
+                                    </select>
+                                </td>
+                                <td><input name="FinishTime" form="@formId" class="form-control form-control-sm js-result-time" placeholder="h:mm:ss" value="@Display.FinishTimeInput(row.FinishTime)" inputmode="numeric" autocomplete="off" disabled="@disabled" /></td>
+                                <td><input name="Position" form="@formId" type="number" min="1" class="form-control form-control-sm js-result-position" value="@(row.Position?.ToString())" disabled="@disabled" /></td>
+                                <td class="text-end text-nowrap">
+                                    <form id="@formId" asp-action="Save" asp-route-eventId="@ev.EventId" asp-route-enrolmentId="@row.EnrolmentId" method="post" class="d-inline">
+                                        @if (row.ResultId is int resultId)
+                                        {
+                                            <input type="hidden" name="ResultId" value="@resultId" />
+                                        }
+                                        <button type="submit" class="btn btn-rd btn-sm" disabled="@disabled">@(row.HasResult ? "Update" : "Publish")</button>
+                                    </form>
+                                    @if (row.HasResult)
+                                    {
+                                        <i class="bi bi-check-circle-fill text-success ms-1" title="Published"></i>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</section>

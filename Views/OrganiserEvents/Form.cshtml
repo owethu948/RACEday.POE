@@ -1,0 +1,125 @@
+@model EventFormViewModel
+@{
+    ViewData["Title"] = Model.IsEdit ? "Edit event" : "Create event";
+    var action = Model.IsEdit ? "Edit" : "Create";
+}
+<section class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-9 col-xl-8">
+            <a asp-action="Index" class="rd-back"><i class="bi bi-arrow-left"></i> Manage events</a>
+            <h1 class="rd-title mt-2 mb-4">@(Model.IsEdit ? "Edit event" : "Create a new event")</h1>
+
+            <div class="card rd-panel">
+                <div class="card-body p-4">
+                    <form asp-action="@action" asp-route-id="@Model.EventId" method="post" enctype="multipart/form-data" novalidate>
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label asp-for="Name" class="form-label"></label>
+                                <input asp-for="Name" class="form-control" />
+                                <span asp-validation-for="Name" class="text-danger small"></span>
+                            </div>
+                            <div class="col-12">
+                                <label asp-for="Description" class="form-label"></label>
+                                <textarea asp-for="Description" class="form-control" rows="4"></textarea>
+                                <span asp-validation-for="Description" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="EventDate" class="form-label"></label>
+                                <input type="datetime-local" name="EventDate" id="EventDate" class="form-control" value="@Display.DateTimeInput(Model.EventDate)" />
+                                <span asp-validation-for="EventDate" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Location" class="form-label"></label>
+                                <input asp-for="Location" class="form-control" placeholder="e.g. Soweto, Johannesburg" />
+                                <span asp-validation-for="Location" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="EventType" class="form-label"></label>
+                                <select name="EventType" id="EventType" class="form-select">
+                                    <option value="Run" selected="@(Model.EventType == "Run")">Run</option>
+                                    <option value="Walk" selected="@(Model.EventType == "Walk")">Walk</option>
+                                    <option value="Cycle" selected="@(Model.EventType == "Cycle")">Cycle</option>
+                                </select>
+                                <span asp-validation-for="EventType" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="DistanceKm" class="form-label"></label>
+                                <input type="number" step="0.01" min="0.01" max="999.99" name="DistanceKm" id="DistanceKm" class="form-control" value="@(Model.DistanceKm == 0 ? "" : Model.DistanceKm.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))" />
+                                <span asp-validation-for="DistanceKm" class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-12">
+                                <label asp-for="Banner" class="form-label"></label>
+                                @if (!string.IsNullOrEmpty(Model.ExistingBannerUrl))
+                                {
+                                    <div class="mb-2">
+                                        <img src="@Model.ExistingBannerUrl" alt="Current banner" class="rd-banner-current" />
+                                        <div class="form-check mt-2">
+                                            <input class="form-check-input" type="checkbox" name="RemoveBanner" id="RemoveBanner" value="true" />
+                                            <label class="form-check-label" for="RemoveBanner">Remove the current banner</label>
+                                        </div>
+                                    </div>
+                                }
+                                <input type="file" asp-for="Banner" class="form-control" accept="image/png,image/jpeg,image/gif,image/webp" data-preview-target="#banner-preview" />
+                                <div class="form-text">JPG, PNG, GIF or WebP, up to 5 MB. Wide images (about 1600 &times; 600) look best.</div>
+                                <span asp-validation-for="Banner" class="text-danger small"></span>
+                                <img id="banner-preview" class="rd-banner-current mt-2" alt="" hidden />
+                            </div>
+                        </div>
+
+                        @if (Model.IsEdit)
+                        {
+                            <div class="mt-4 small text-muted">
+                                Categories are managed on their own page:
+                                <a asp-controller="OrganiserCategories" asp-action="Index" asp-route-eventId="@Model.EventId">Edit categories</a>.
+                            </div>
+                        }
+                        else
+                        {
+                            <hr class="my-4" />
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <div class="fw-bold">Categories</div>
+                                    <div class="small text-muted">Add the distances or age groups people can enter. You can also do this later.</div>
+                                </div>
+                                <button type="button" class="btn btn-outline-rd btn-sm" id="add-cat-row">+ Add category</button>
+                            </div>
+                            <div id="cat-rows">
+                                @for (var i = 0; i < Model.Categories.Count; i++)
+                                {
+                                    var row = Model.Categories[i];
+                                    <div class="row g-2 align-items-end cat-row mb-2">
+                                        <div class="col-12 col-md-4"><label class="form-label small">Name</label><input class="form-control" data-field="Name" name="Categories[@i].Name" value="@row.Name" maxlength="100" placeholder="e.g. 21km or Under 20" /></div>
+                                        <div class="col-4 col-md-2"><label class="form-label small">Distance (km)</label><input class="form-control" type="number" step="0.01" min="0.01" data-field="DistanceKm" name="Categories[@i].DistanceKm" value="@(row.DistanceKm?.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))" /></div>
+                                        <div class="col-4 col-md-3"><label class="form-label small">Max participants</label><input class="form-control" type="number" min="1" data-field="MaxParticipants" name="Categories[@i].MaxParticipants" value="@row.MaxParticipants" /></div>
+                                        <div class="col-3 col-md-2"><label class="form-label small">Fee (R)</label><input class="form-control" type="number" step="0.01" min="0" data-field="EntryFee" name="Categories[@i].EntryFee" value="@(row.EntryFee?.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture))" /></div>
+                                        <div class="col-1 text-end"><button type="button" class="cat-row-remove" title="Remove" aria-label="Remove category">✕</button></div>
+                                    </div>
+                                }
+                            </div>
+                            <template id="cat-row-template">
+                                <div class="row g-2 align-items-end cat-row mb-2">
+                                    <div class="col-12 col-md-4"><label class="form-label small">Name</label><input class="form-control" data-field="Name" maxlength="100" placeholder="e.g. 21km or Under 20" /></div>
+                                    <div class="col-4 col-md-2"><label class="form-label small">Distance (km)</label><input class="form-control" type="number" step="0.01" min="0.01" data-field="DistanceKm" /></div>
+                                    <div class="col-4 col-md-3"><label class="form-label small">Max participants</label><input class="form-control" type="number" min="1" data-field="MaxParticipants" value="100" /></div>
+                                    <div class="col-3 col-md-2"><label class="form-label small">Fee (R)</label><input class="form-control" type="number" step="0.01" min="0" data-field="EntryFee" value="0" /></div>
+                                    <div class="col-1 text-end"><button type="button" class="cat-row-remove" title="Remove" aria-label="Remove category">✕</button></div>
+                                </div>
+                            </template>
+                        }
+
+                        <div class="d-flex gap-2 mt-4">
+                            <button type="submit" class="btn btn-rd px-4">@(Model.IsEdit ? "Save changes" : "Create event")</button>
+                            <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,8 +1,100 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@model HomeIndexViewModel
+@{
+    ViewData["Title"] = "Browse Events";
+    var filter = Model.Filter;
+    var eventPage = Model.Events;
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="rd-hero">
+    <div>
+        <div class="hero-tag">Spring season · 2026 / 2027</div>
+        <div class="hero-h">Your next adventure<br />starts here 🏃‍♀️</div>
+        <div class="hero-sub mt-2">@Display.Plural(eventPage.TotalCount, "event") open for entries. Find your race and enter today.</div>
+    </div>
+    @if (!CurrentUser.IsAuthenticated)
+    {
+        <a class="hero-btn" asp-controller="Account" asp-action="Register">Join RaceDay</a>
+    }
 </div>
+
+<form method="get" asp-controller="Home" asp-action="Index" class="rd-filter">
+    <div class="row g-2 align-items-end">
+        <div class="col-12 col-lg-4">
+            <label class="form-label" for="search">Search</label>
+            <input class="form-control" id="search" name="Search" value="@filter.Search" placeholder="Event name or keyword" />
+        </div>
+        <div class="col-6 col-lg-3">
+            <label class="form-label" for="location">Location</label>
+            <input class="form-control" id="location" name="Location" value="@filter.Location" placeholder="City or province" />
+        </div>
+        <div class="col-6 col-lg-3">
+            <label class="form-label" for="eventType">Type</label>
+            <select class="form-select" id="eventType" name="EventType">
+                <option value="" selected="@(string.IsNullOrEmpty(filter.EventType))">All types</option>
+                <option value="Run" selected="@(filter.EventType == "Run")">Run</option>
+                <option value="Walk" selected="@(filter.EventType == "Walk")">Walk</option>
+                <option value="Cycle" selected="@(filter.EventType == "Cycle")">Cycle</option>
+            </select>
+        </div>
+        <div class="col-12 col-lg-2 d-flex gap-2">
+            <button type="submit" class="btn btn-rd flex-grow-1">Search</button>
+            @if (filter.IsFiltered)
+            {
+                <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary" title="Clear filters">✕</a>
+            }
+        </div>
+    </div>
+</form>
+
+<div class="section-label">@(filter.IsFiltered ? "Matching events" : "All upcoming events")</div>
+
+@if (eventPage.Items.Count == 0)
+{
+    <div class="empty">
+        <span class="empty-icon">📅</span>
+        <div class="empty-h">No events found</div>
+        <p class="mb-0">@(filter.IsFiltered ? "Try a different search or clear the filters." : "There are no upcoming events yet. Check back soon!")</p>
+    </div>
+}
+else
+{
+    <div class="grid-3">
+        @foreach (var ev in eventPage.Items)
+        {
+            var cardData = new ViewDataDictionary(ViewData);
+            cardData["Enrolled"] = Model.EnrolledEventIds.Contains(ev.EventId);
+            cardData["IsParticipant"] = Model.IsParticipant;
+            <partial name="_EventCard" model="ev" view-data="cardData" />
+        }
+    </div>
+
+    @if (eventPage.TotalPages > 1)
+    {
+        <nav class="mb-4" aria-label="Event pages">
+            <ul class="pagination justify-content-center rd-pagination">
+                <li class="page-item @(eventPage.Page <= 1 ? "disabled" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-Search="@filter.Search" asp-route-Location="@filter.Location" asp-route-EventType="@filter.EventType" asp-route-Page="@(eventPage.Page - 1)">Previous</a>
+                </li>
+                @for (var i = 1; i <= eventPage.TotalPages; i++)
+                {
+                    <li class="page-item @(i == eventPage.Page ? "active" : "")">
+                        <a class="page-link" asp-action="Index" asp-route-Search="@filter.Search" asp-route-Location="@filter.Location" asp-route-EventType="@filter.EventType" asp-route-Page="@i">@i</a>
+                    </li>
+                }
+                <li class="page-item @(eventPage.Page >= eventPage.TotalPages ? "disabled" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-Search="@filter.Search" asp-route-Location="@filter.Location" asp-route-EventType="@filter.EventType" asp-route-Page="@(eventPage.Page + 1)">Next</a>
+                </li>
+            </ul>
+        </nav>
+    }
+}
+
+@if (Model.IsParticipant)
+{
+    <div class="grid-4">
+        <div class="stat-card"><div class="stat-val">@eventPage.TotalCount</div><div class="stat-lbl">Events open for entry</div></div>
+        <div class="stat-card"><div class="stat-val">@Model.EnrolledEventIds.Count</div><div class="stat-lbl">Events you've entered</div></div>
+        <div class="stat-card"><div class="stat-val">@Display.Money(Model.FeesPaid)</div><div class="stat-lbl">Total entry fees</div></div>
+        <div class="stat-card"><div class="stat-val">@Model.RacesFinished</div><div class="stat-lbl">Races finished</div></div>
+    </div>
+}

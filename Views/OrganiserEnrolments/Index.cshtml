@@ -1,0 +1,73 @@
+@model EventEnrolmentsViewModel
+@{
+    var ev = Model.Event;
+    ViewData["Title"] = "Enrolments · " + ev.Name;
+    var filter = Model.StatusFilter ?? string.Empty;
+}
+<section class="container py-4">
+    <a asp-controller="OrganiserEvents" asp-action="Index" class="rd-back"><i class="bi bi-arrow-left"></i> Manage events</a>
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mt-2 mb-4">
+        <div>
+            <h1 class="rd-title mb-1">Enrolments</h1>
+            <p class="text-muted mb-0">@ev.Name &middot; @Display.Date(ev.EventDate) &middot; @Display.Plural(Model.ConfirmedCount, "confirmed enrolment") shown</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a class="btn btn-outline-rd btn-sm" asp-controller="OrganiserCategories" asp-action="Index" asp-route-eventId="@ev.EventId"><i class="bi bi-tags-fill"></i> Categories</a>
+            <a class="btn btn-rd btn-sm" asp-controller="OrganiserResults" asp-action="Index" asp-route-eventId="@ev.EventId"><i class="bi bi-stopwatch-fill"></i> Enter results</a>
+        </div>
+    </div>
+
+    <ul class="nav nav-pills rd-pills mb-3">
+        <li class="nav-item"><a class="nav-link @(filter == "" ? "active" : "")" asp-action="Index" asp-route-eventId="@ev.EventId">All</a></li>
+        <li class="nav-item"><a class="nav-link @(filter == "Confirmed" ? "active" : "")" asp-action="Index" asp-route-eventId="@ev.EventId" asp-route-status="Confirmed">Confirmed</a></li>
+        <li class="nav-item"><a class="nav-link @(filter == "Cancelled" ? "active" : "")" asp-action="Index" asp-route-eventId="@ev.EventId" asp-route-status="Cancelled">Cancelled</a></li>
+    </ul>
+
+    @if (Model.Enrolments.Count == 0)
+    {
+        <div class="rd-empty">
+            <i class="bi bi-people"></i>
+            <h2 class="h5">No enrolments to show</h2>
+            <p class="text-muted mb-0">When participants enrol, they'll appear here.</p>
+        </div>
+    }
+    else
+    {
+        <div class="card rd-panel">
+            <div class="table-responsive">
+                <table class="table rd-table align-middle mb-0">
+                    <thead><tr><th>Participant</th><th>Category</th><th>Enrolled on</th><th>Status</th><th>Result</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach (var e in Model.Enrolments)
+                        {
+                            <tr>
+                                <td><strong>@e.ParticipantName</strong></td>
+                                <td>@e.CategoryName <span class="text-muted small">(@Display.Km(e.DistanceKm))</span></td>
+                                <td>@Display.Date(e.EnrolmentDate)</td>
+                                <td><partial name="_StatusBadge" model="e.Status" /></td>
+                                <td>
+                                    @if (e.HasResult)
+                                    {
+                                        <span class="text-success"><i class="bi bi-check-circle-fill"></i> Published</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">&ndash;</span>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    @if (e.Status == "Confirmed" && !e.HasResult)
+                                    {
+                                        <form asp-action="Cancel" asp-route-eventId="@ev.EventId" asp-route-enrolmentId="@e.EnrolmentId" method="post" class="m-0" data-confirm="Cancel @(e.ParticipantName)'s enrolment?">
+                                            <button type="submit" class="btn btn-outline-danger btn-sm">Cancel</button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</section>

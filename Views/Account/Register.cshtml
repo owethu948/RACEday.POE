@@ -1,0 +1,66 @@
+@model RegisterViewModel
+@{
+    ViewData["Title"] = "Join RaceDay";
+}
+<section class="container rd-auth">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-9 col-lg-6">
+            <div class="card rd-panel">
+                <div class="card-body p-4 p-md-5">
+                    <h1 class="rd-title h2 mb-1">Join RaceDay</h1>
+                    <p class="text-muted mb-4">Create your free account in under a minute.</p>
+
+                    <form asp-action="Register" method="post" novalidate>
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                        <div class="mb-3">
+                            <label class="form-label d-block">I want to</label>
+                            <div class="btn-group w-100" role="group" aria-label="Account type">
+                                <input type="radio" class="btn-check" name="Role" id="role-participant" value="Participant" checked="@(Model.Role != "Organiser")" />
+                                <label class="btn btn-outline-rd" for="role-participant"><i class="bi bi-person-running"></i> Race in events</label>
+                                <input type="radio" class="btn-check" name="Role" id="role-organiser" value="Organiser" checked="@(Model.Role == "Organiser")" />
+                                <label class="btn btn-outline-rd" for="role-organiser"><i class="bi bi-flag-fill"></i> Organise events</label>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="FullName" class="form-label"></label>
+                            <input asp-for="FullName" class="form-control" autocomplete="name" />
+                            <span asp-validation-for="FullName" class="text-danger small"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Email" class="form-label">Email</label>
+                            <input asp-for="Email" class="form-control" autocomplete="email" />
+                            <span asp-validation-for="Email" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3" id="organiser-code-group" hidden>
+                            <label asp-for="OrganiserCode" class="form-label"></label>
+                            <input asp-for="OrganiserCode" class="form-control" autocomplete="off" />
+                            <div class="form-text">Organiser accounts need the registration code supplied by RaceDay.</div>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label asp-for="Password" class="form-label"></label>
+                                <input asp-for="Password" class="form-control" autocomplete="new-password" />
+                                <span asp-validation-for="Password" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="ConfirmPassword" class="form-label"></label>
+                                <input asp-for="ConfirmPassword" class="form-control" autocomplete="new-password" />
+                                <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-rd btn-lg w-100">Create account</button>
+                    </form>
+
+                    <p class="text-center text-muted mt-4 mb-0">Already registered? <a asp-action="Login">Log in</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

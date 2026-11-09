@@ -1,0 +1,9 @@
+@model EventDto
+@if (Display.HasBanner(Model.BannerUrl))
+{
+    <div class="rd-banner"><img src="@Model.BannerUrl" alt="Banner for @Model.Name" loading="lazy" /></div>
+}
+else
+{
+    <div class="rd-banner @Display.GradientClass(Model.EventId)" role="img" aria-label="@Model.EventType event">@Display.EventEmoji(Model.EventType)</div>
+}

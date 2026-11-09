@@ -1,30 +1,34 @@
-# See https://aka.ms/customizecontainer to learn how to customize your debug container and how Visual Studio uses this Dockerfile to build your images for faster debugging.
+# syntax=docker/dockerfile:1
 
-# This stage is used when running from VS in fast mode (Default for Debug configuration)
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
-USER $APP_UID
-WORKDIR /app
-EXPOSE 8080
-EXPOSE 8081
-
-
-# This stage is used to build the service project
+# ---------- build stage: full SDK, compiles and publishes the app ----------
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
-ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["RACEday.POE.csproj", "."]
-RUN dotnet restore "./RACEday.POE.csproj"
+
+# Copy only the project file first and restore. Docker caches this layer, so rebuilds after a code
+# change skip the slow NuGet restore unless the .csproj itself changed.
+COPY RaceDay.Web.csproj ./
+RUN dotnet restore RaceDay.Web.csproj
+
 COPY . .
-WORKDIR "/src/."
-RUN dotnet build "./RACEday.POE.csproj" -c $BUILD_CONFIGURATION -o /app/build
+RUN dotnet publish RaceDay.Web.csproj -c Release -o /app/publish --no-restore /p:UseAppHost=false
 
-# This stage is used to publish the service project to be copied to the final stage
-FROM build AS publish
-ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./RACEday.POE.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
-
-# This stage is used in production or when running from VS in regular mode (Default when not using the Debug configuration)
-FROM base AS final
+# ---------- runtime stage: small ASP.NET image, no SDK, runs as a non-root user ----------
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
-COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "RACEday.POE.dll"]
+
+# The pages decide "upcoming" and "past" with DateTime.Now. Containers default to UTC, so the time zone is
+# set to the one the event organisers and the local run use, so both show the same events as "past".
+ENV ASPNETCORE_HTTP_PORTS=8080 \
+    ASPNETCORE_ENVIRONMENT=Production \
+    TZ=Africa/Johannesburg \
+    DOTNET_gcServer=0 \
+    DOTNET_TieredPGO=1
+
+EXPOSE 8080
+COPY --from=build /app/publish ./
+
+# The base image ships an unprivileged "app" user; APP_UID is its id.
+USER $APP_UID
+
+# Where to find the RaceDay API is supplied at run time: -e ApiBaseUrl=http://host.docker.internal:5146/
+ENTRYPOINT ["dotnet", "RaceDay.Web.dll"]
