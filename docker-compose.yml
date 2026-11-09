@@ -1,0 +1,47 @@
+# One command runs the whole RaceDay stack:   docker compose up --build
+#   web  -> http://localhost:5080      api -> http://localhost:5146/swagger
+#
+# Put secrets in a ".env" file next to this one (it is git-ignored), for example:
+#   SA_PASSWORD=Use-A-Str0ng-Password!
+#   AZURE_STORAGE_CONNECTION_STRING=DefaultEndpointsProtocol=https;AccountName=...;AccountKey=...;EndpointSuffix=core.windows.net
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "${SA_PASSWORD:-RaceDay_Str0ng!Pass1}"
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -Q \"SELECT 1\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    volumes:
+      - sqldata:/var/opt/mssql
+
+  api:
+    build: ./RaceDay.Api
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development      # keeps Swagger's friendly error pages on for the demo
+      ConnectionStrings__DefaultConnection: "Server=sqlserver;Database=RaceDayDB;User Id=sa;Password=${SA_PASSWORD:-RaceDay_Str0ng!Pass1};TrustServerCertificate=True;MultipleActiveResultSets=true"
+      Database__SeedDemoData: "true"
+      AzureBlobStorage__ConnectionString: "${AZURE_STORAGE_CONNECTION_STRING:-}"
+      AzureBlobStorage__ContainerName: "raceday-images"
+    ports:
+      - "5146:8080"
+    restart: on-failure
+
+  web:
+    build: ./RaceDay.Web
+    depends_on:
+      - api
+    environment:
+      ApiBaseUrl: "http://api:8080/"            # the API's service name, NOT localhost
+    ports:
+      - "5080:8080"
+
+volumes:
+  sqldata:

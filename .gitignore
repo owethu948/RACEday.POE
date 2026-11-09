@@ -361,3 +361,11 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# Test output
+TestResults/
+
+# RaceDay Part 3
+.env
+**/appsettings.Local.json
+**/secrets.json
+TestResults/
